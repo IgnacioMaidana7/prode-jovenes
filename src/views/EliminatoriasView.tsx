@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,7 +30,6 @@ const bracketVariants = {
 };
 
 export function EliminatoriasView() {
-  const navigate = useNavigate();
   const { knockoutMatches, isLoading, isError, refetch } = useFixtures();
 
   return (
@@ -125,31 +123,6 @@ export function EliminatoriasView() {
           })}
         </div>
       )}
-
-      <motion.div
-        variants={fadeUp}
-        className="sticky bottom-20 z-10 flex flex-col gap-2 rounded-xl border border-border/40 bg-card/90 p-3 backdrop-blur-md md:bottom-0 md:flex-row md:items-center md:justify-between"
-      >
-        <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-muted-foreground">
-          Los cruces se actualizan a medida que avanza el torneo
-        </span>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/grupos")}
-          >
-            Volver a grupos
-          </Button>
-          <Button
-            variant="gradient"
-            size="sm"
-            onClick={() => navigate("/leaderboard")}
-          >
-            Ver ranking
-          </Button>
-        </div>
-      </motion.div>
     </motion.div>
   );
 }

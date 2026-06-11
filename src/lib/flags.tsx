@@ -6,9 +6,18 @@ type FlagProps = {
   width?: number;
 };
 
+const SPECIAL_FLAGS: Record<string, string> = {
+  "GB-ENG": "\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}",
+  "GB-SCT": "\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}",
+  "GB-WLS": "\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}",
+  "GB-NIR": "\u{1F1EC}\u{1F1E7}",
+};
+
 function codeToEmoji(code: string): string {
-  if (!code || code.length !== 2) return "🏳️";
+  if (!code) return "🏳️";
   const upper = code.toUpperCase();
+  if (SPECIAL_FLAGS[upper]) return SPECIAL_FLAGS[upper];
+  if (upper.length !== 2) return "🏳️";
   const A = 0x1f1e6;
   const base = "A".charCodeAt(0);
   return String.fromCodePoint(

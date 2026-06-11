@@ -30,7 +30,7 @@ export function ProfileHero() {
   const handleLogout = () => {
     try {
       logout();
-      toast.success("Listo, ya podés entrar con otro nombre.");
+      toast.success("Listo, ya podés entrar con otro DNI.");
       navigate("/login", { replace: true });
     } catch (err) {
       toast.error(
@@ -114,7 +114,7 @@ export function ProfileHero() {
           <Settings /> Preferencias
         </Button>
         <Button variant="ghost" size="sm" onClick={handleLogout}>
-          <LogOut /> Cambiar de nombre
+          <LogOut /> Cambiar de usuario
         </Button>
       </div>
     </motion.div>

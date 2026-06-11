@@ -1,6 +1,5 @@
-import { useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,11 +8,12 @@ import { fadeUp, staggerContainer } from "@/lib/motion";
 import { useUiStore } from "@/stores/ui.store";
 import { useFixtures } from "@/hooks/useFixtures";
 import { usePredictions } from "@/hooks/usePredictions";
+import { CheckCircle2 } from "lucide-react";
 
 export function GruposView() {
-  const navigate = useNavigate();
   const activeGroup = useUiStore((s) => s.activeGroup);
   const setActiveGroup = useUiStore((s) => s.setActiveGroup);
+  const tabsListRef = useRef<HTMLDivElement>(null);
 
   const { groupMatches, groups, isLoading, isError, refetch } = useFixtures();
   const { count: predictionsCount } = usePredictions();
@@ -22,6 +22,32 @@ export function GruposView() {
     if (groups.length === 0) return activeGroup;
     return groups.includes(activeGroup) ? activeGroup : groups[0];
   }, [groups, activeGroup]);
+
+  useLayoutEffect(() => {
+    if (!tabsListRef.current) return;
+    tabsListRef.current.scrollLeft = 0;
+  }, [groups.length]);
+
+  useEffect(() => {
+    if (!tabsListRef.current) return;
+    const timer = setTimeout(() => {
+      if (!tabsListRef.current) return;
+      if (effectiveActive === "A") {
+        tabsListRef.current.scrollTo({ left: 0, behavior: "instant" });
+      } else {
+        const activeTab = tabsListRef.current.querySelector<HTMLElement>(
+          `[data-state="active"]`
+        );
+        if (activeTab) {
+          tabsListRef.current.scrollTo({
+            left: activeTab.offsetLeft,
+            behavior: "instant",
+          });
+        }
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [effectiveActive]);
 
   const matchesByGroup = useMemo(() => {
     const map = new Map<string, typeof groupMatches>();
@@ -46,16 +72,28 @@ export function GruposView() {
       className="flex flex-col gap-6"
     >
       <motion.header variants={fadeUp} className="flex flex-col gap-2">
-        <span className="font-mono-label text-[0.7rem] uppercase tracking-wider text-primary">
-          Fase de Grupos
-        </span>
-        <h1 className="font-display text-4xl font-extrabold leading-none tracking-tight text-foreground md:text-5xl">
-          Pronosticá los grupos
-        </h1>
-        <p className="max-w-2xl text-pretty text-muted-foreground">
-          Cargá tu pronóstico para cada partido antes del kickoff. Acertar el
-          resultado exacto suma el triple.
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="font-mono-label text-[0.7rem] uppercase tracking-wider text-primary">
+              Fase de Grupos
+            </span>
+            <h1 className="font-display text-4xl font-extrabold leading-none tracking-tight text-foreground md:text-5xl">
+              Pronosticá los grupos
+            </h1>
+            <p className="max-w-2xl text-pretty text-muted-foreground">
+              Cargá tu pronóstico para cada partido antes del kickoff. Acertar
+              el resultado exacto suma el triple.
+            </p>
+          </div>
+          {predictionsCount > 0 && (
+            <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
+              <CheckCircle2 className="size-4 text-primary" />
+              <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-primary">
+                {predictionsCount} pronósticos guardados
+              </span>
+            </div>
+          )}
+        </div>
       </motion.header>
 
       {isError ? (
@@ -91,17 +129,23 @@ export function GruposView() {
       ) : (
         <motion.div variants={fadeUp}>
           <Tabs value={effectiveActive} onValueChange={handleChange}>
-            <TabsList variant="line" className="w-full justify-start gap-0">
-              {groups.map((g) => (
-                <TabsTrigger
-                  key={g}
-                  value={g}
-                  className="flex-1 md:flex-none"
-                >
-                  Grupo {g}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <div className="sticky top-0 z-20 -mx-4 bg-background/80 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 md:static md:mx-0 md:bg-transparent md:px-0 md:backdrop-blur-none">
+              <TabsList
+                ref={tabsListRef}
+                variant="line"
+                className="w-full overflow-x-auto scrollbar-hide justify-start"
+              >
+                {groups.map((g) => (
+                  <TabsTrigger
+                    key={g}
+                    value={g}
+                    className="shrink-0"
+                  >
+                    Grupo {g}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
             <AnimatePresence mode="wait">
               {groups.map((g) => (
                 <TabsContent key={g} value={g} className="mt-6">
@@ -122,33 +166,6 @@ export function GruposView() {
           </Tabs>
         </motion.div>
       )}
-
-      <motion.div
-        variants={fadeUp}
-        className="sticky bottom-20 z-10 flex flex-col gap-2 rounded-xl border border-border/40 bg-card/90 p-3 backdrop-blur-md md:bottom-0 md:flex-row md:items-center md:justify-between"
-      >
-        <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-muted-foreground">
-          {predictionsCount > 0
-            ? `${predictionsCount} pronósticos guardados`
-            : "Guardá antes del kickoff para sumar puntos"}
-        </span>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/reglas")}
-          >
-            Ver reglas
-          </Button>
-          <Button
-            variant="gradient"
-            size="sm"
-            onClick={() => navigate("/leaderboard")}
-          >
-            Ver ranking
-          </Button>
-        </div>
-      </motion.div>
     </motion.div>
   );
 }

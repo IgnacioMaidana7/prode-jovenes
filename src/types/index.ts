@@ -59,6 +59,7 @@ export type PredictionInsert = {
 export type Profile = {
   id: string;
   username: string;
+  dni: string | null;
   avatar_url: string | null;
   is_admin: boolean;
   created_at: string;
@@ -67,6 +68,7 @@ export type Profile = {
 export type ProfileInsert = {
   id: string;
   username: string;
+  dni?: string | null;
   avatar_url?: string | null;
   is_admin?: boolean;
 };
@@ -105,6 +107,7 @@ export type GroupLeaderboardEntry = LeaderboardEntry & {
 export type Player = {
   id: string;
   username: string;
+  dni: string;
 };
 
 export type MatchKind = "group" | "knockout";

@@ -18,6 +18,36 @@ const FLAG_CODES: Record<string, string> = {
   'Argentina': 'AR', 'Algeria': 'DZ', 'Austria': 'AT', 'Jordan': 'JO',
   'Portugal': 'PT', 'DR Congo': 'CD', 'Uzbekistan': 'UZ', 'Colombia': 'CO',
   'England': 'GB-ENG', 'Croatia': 'HR', 'Ghana': 'GH', 'Panama': 'PA',
+  'Wales': 'GB-WLS', 'Northern Ireland': 'GB-NIR', 'China': 'CN',
+  'Costa Rica': 'CR', 'Serbia': 'RS', 'Denmark': 'DK', 'Poland': 'PL',
+  'Ukraine': 'UA', 'Romania': 'RO', 'Peru': 'PE', 'Chile': 'CL',
+  'Bolivia': 'BO', 'Venezuela': 'VE', 'Jamaica': 'JM', 'Honduras': 'HN',
+  'El Salvador': 'SV', 'Trinidad and Tobago': 'TT', 'Cameroon': 'CM',
+  'Greece': 'GR', 'Ireland': 'IE', 'Côte d\'Ivoire': 'CI',
+}
+
+const TEAM_NAMES_ES: Record<string, string> = {
+  'Mexico': 'México', 'South Africa': 'Sudáfrica', 'South Korea': 'Corea del Sur',
+  'Czech Republic': 'Chequia', 'Canada': 'Canadá', 'Bosnia & Herzegovina': 'Bosnia y Herzegovina',
+  'Qatar': 'Catar', 'Switzerland': 'Suiza', 'Brazil': 'Brasil', 'Morocco': 'Marruecos',
+  'Haiti': 'Haití', 'Scotland': 'Escocia', 'USA': 'Estados Unidos', 'Paraguay': 'Paraguay',
+  'Australia': 'Australia', 'Turkey': 'Turquía', 'Germany': 'Alemania', 'Curaçao': 'Curazao',
+  'Ivory Coast': 'Costa de Marfil', 'Ecuador': 'Ecuador', 'Netherlands': 'Países Bajos',
+  'Japan': 'Japón', 'Sweden': 'Suecia', 'Tunisia': 'Túnez', 'Belgium': 'Bélgica',
+  'Egypt': 'Egipto', 'Iran': 'Irán', 'New Zealand': 'Nueva Zelanda', 'Spain': 'España',
+  'Cape Verde': 'Cabo Verde', 'Saudi Arabia': 'Arabia Saudita', 'Uruguay': 'Uruguay',
+  'France': 'Francia', 'Senegal': 'Senegal', 'Iraq': 'Irak', 'Norway': 'Noruega',
+  'Argentina': 'Argentina', 'Algeria': 'Argelia', 'Austria': 'Austria', 'Jordan': 'Jordania',
+  'Portugal': 'Portugal', 'DR Congo': 'RD del Congo', 'Uzbekistan': 'Uzbekistán',
+  'Colombia': 'Colombia', 'England': 'Inglaterra', 'Croatia': 'Croacia', 'Ghana': 'Ghana',
+  'Panama': 'Panamá', 'Wales': 'Gales', 'Northern Ireland': 'Irlanda del Norte',
+  'China': 'China', 'Costa Rica': 'Costa Rica', 'Serbia': 'Serbia',
+  'Denmark': 'Dinamarca', 'Poland': 'Polonia', 'Ukraine': 'Ucrania',
+  'Romania': 'Rumanía', 'Peru': 'Perú', 'Chile': 'Chile',
+  'Bolivia': 'Bolivia', 'Venezuela': 'Venezuela', 'Jamaica': 'Jamaica',
+  'Honduras': 'Honduras', 'El Salvador': 'El Salvador',
+  'Trinidad and Tobago': 'Trinidad y Tobago', 'Cameroon': 'Camerún',
+  'Greece': 'Grecia', 'Ireland': 'Irlanda', 'Côte d\'Ivoire': 'Costa de Marfil',
 }
 
 // Convierte "13:00 UTC-6" → offset en minutos (-360)
@@ -83,8 +113,8 @@ Deno.serve(async () => {
           external_id: i + 1, // openfootball no tiene ID, usamos el índice
           stage,
           group_name: groupName,
-          team_home: match.team1 ?? null,
-          team_away: match.team2 ?? null,
+          team_home: TEAM_NAMES_ES[match.team1] ?? match.team1 ?? null,
+          team_away: TEAM_NAMES_ES[match.team2] ?? match.team2 ?? null,
           flag_home: FLAG_CODES[match.team1] ?? null,
           flag_away: FLAG_CODES[match.team2] ?? null,
           date: dateISO,
