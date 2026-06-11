@@ -21,6 +21,8 @@ export const fixturesQuery = queryOptions({
   queryFn: fetchFixtures,
   staleTime: 60_000,
   refetchOnWindowFocus: true,
+  refetchInterval: 30_000,
+  refetchIntervalInBackground: false,
 });
 
 export function useFixtures() {

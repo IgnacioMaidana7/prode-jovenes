@@ -30,6 +30,8 @@ export function predictionsQueryOptions(playerId: string | undefined) {
     queryFn: () => fetchPredictions(playerId!),
     enabled: !!playerId,
     staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
 }
 

@@ -15,6 +15,7 @@ import { EliminatoriasView } from "@/views/EliminatoriasView";
 import { LeaderboardView } from "@/views/LeaderboardView";
 import { PerfilView } from "@/views/PerfilView";
 import { useIsAuthenticated, useAuthStore } from "@/stores/auth.store";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +56,11 @@ const router = createBrowserRouter([
   { path: "*", element: <Navigate to="/" replace /> },
 ]);
 
+function RealtimeBridge() {
+  useRealtimeSync();
+  return null;
+}
+
 function App() {
   const initialize = useAuthStore((s) => s.initialize);
 
@@ -64,6 +70,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <RealtimeBridge />
       <RouterProvider router={router} />
     </QueryClientProvider>
   );

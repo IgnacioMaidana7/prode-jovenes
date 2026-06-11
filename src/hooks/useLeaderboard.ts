@@ -33,6 +33,8 @@ export const globalLeaderboardQuery = queryOptions({
   queryKey: GLOBAL_KEY,
   queryFn: fetchGlobalLeaderboard,
   staleTime: 30_000,
+  refetchInterval: 30_000,
+  refetchIntervalInBackground: false,
 });
 
 export function useGlobalLeaderboard() {
@@ -45,6 +47,8 @@ export function useGroupLeaderboard(groupId: string | undefined) {
     queryFn: () => fetchGroupLeaderboard(groupId!),
     enabled: !!groupId,
     staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
 }
 
