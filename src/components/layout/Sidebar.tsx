@@ -1,5 +1,6 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import {
   Home,
   Gavel,
@@ -14,7 +15,8 @@ import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/prode/BrandLogo";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useUser, useLogout } from "@/stores/auth.store";
+import { usePlayer, useLogout } from "@/stores/auth.store";
+import { useCurrentUserStats } from "@/hooks/useLeaderboard";
 import { formatPoints } from "@/lib/format";
 
 type NavItem = {
@@ -33,14 +35,29 @@ const items: NavItem[] = [
 ];
 
 export function Sidebar() {
-  const user = useUser();
+  const player = usePlayer();
   const logout = useLogout();
-  const initials = user?.name
+  const navigate = useNavigate();
+  const stats = useCurrentUserStats();
+
+  const displayName = player?.username ?? "Invitado";
+  const initials = displayName
     .split(" ")
     .map((p) => p[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  const handleLogout = () => {
+    try {
+      logout();
+      navigate("/login", { replace: true });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "No pudimos cerrar la sesión."
+      );
+    }
+  };
 
   return (
     <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-border/40 bg-sidebar lg:flex">
@@ -59,10 +76,10 @@ export function Sidebar() {
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-foreground">
-                {user?.name ?? "Invitado"}
+                {displayName}
               </p>
               <p className="font-mono-label text-[0.65rem] uppercase tracking-wider text-muted-foreground">
-                {formatPoints(user?.points ?? 0)} pts
+                {formatPoints(stats.points)} pts
               </p>
             </div>
           </div>
@@ -124,11 +141,11 @@ export function Sidebar() {
           Mi Perfil
         </NavLink>
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
         >
           <LogOut className="size-4" />
-          Cerrar Sesión
+          Cambiar de nombre
         </button>
       </div>
     </aside>

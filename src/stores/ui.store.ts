@@ -1,10 +1,9 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { GroupId } from "@/data/groups";
 
 type UiState = {
-  activeGroup: GroupId;
-  setActiveGroup: (id: GroupId) => void;
+  activeGroup: string;
+  setActiveGroup: (id: string) => void;
   sidebarOpen: boolean;
   toggleSidebar: () => void;
   setSidebar: (open: boolean) => void;

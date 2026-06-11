@@ -4,18 +4,16 @@ import { ArrowRight, Gavel, LayoutGrid, Trophy } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LiveBadge } from "@/components/prode/LiveBadge";
 import { Flag } from "@/lib/flags";
 import { fadeUp, staggerContainer } from "@/lib/motion";
-import { getTeam } from "@/data/teams";
-import { groupMatches } from "@/data/matches";
 import { formatMatchDate, formatMatchTime } from "@/lib/format";
+import { useFixtures, useUpcomingMatches } from "@/hooks/useFixtures";
 
 export function HomeView() {
-  const liveMatch = groupMatches.find((m) => m.status === "live");
-  const upcoming = groupMatches
-    .filter((m) => m.status === "scheduled")
-    .slice(0, 3);
+  const { liveMatch, isLoading } = useFixtures();
+  const { matches: upcomingMatches } = useUpcomingMatches(3);
 
   return (
     <motion.div
@@ -65,14 +63,23 @@ export function HomeView() {
           <Card className="relative overflow-hidden ring-1 ring-primary/40 glow-primary">
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
             <CardContent className="relative grid grid-cols-1 items-center gap-4 md:grid-cols-[1fr_auto_1fr_auto]">
-              <TeamPreview code={liveMatch.home} />
+              <TeamPreview
+                flag={liveMatch.flag_home}
+                name={liveMatch.team_home ?? "—"}
+              />
               <span className="font-display text-2xl text-muted-foreground">
-                VS
+                {liveMatch.result_home ?? 0} - {liveMatch.result_away ?? 0}
               </span>
-              <TeamPreview code={liveMatch.away} reverse />
+              <TeamPreview
+                flag={liveMatch.flag_away}
+                name={liveMatch.team_away ?? "—"}
+                reverse
+              />
               <div className="flex flex-col items-center gap-1 md:items-end">
                 <span className="font-mono-label text-[0.6rem] uppercase tracking-wider text-muted-foreground">
-                  Estadio Monumental
+                  {liveMatch.stage === "GROUP"
+                    ? `Grupo ${liveMatch.group_name ?? "?"}`
+                    : liveMatch.stage}
                 </span>
                 <span className="font-display text-sm text-foreground">
                   {formatMatchTime(liveMatch.date)}
@@ -96,10 +103,18 @@ export function HomeView() {
           </Link>
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          {upcoming.map((m) => {
-            const home = getTeam(m.home);
-            const away = getTeam(m.away);
-            return (
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 w-full" />
+            ))
+          ) : upcomingMatches.length === 0 ? (
+            <div className="col-span-full rounded-lg border border-dashed border-border/40 bg-muted/10 p-6 text-center">
+              <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+                Sin partidos próximos
+              </span>
+            </div>
+          ) : (
+            upcomingMatches.map((m) => (
               <Card key={m.id} size="sm" className="hover:border-primary/30">
                 <CardContent className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
@@ -107,14 +122,16 @@ export function HomeView() {
                       {formatMatchDate(m.date)} · {formatMatchTime(m.date)}
                     </span>
                     <Badge variant="outline" className="text-[0.6rem]">
-                      GRUPO {m.group}
+                      {m.stage === "GROUP"
+                        ? `GRUPO ${m.group_name ?? "?"}`
+                        : m.stage}
                     </Badge>
                   </div>
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                     <div className="flex items-center gap-2">
-                      <Flag code={m.home} width={24} />
+                      <Flag code={m.flag_home ?? "XX"} width={24} />
                       <span className="truncate text-sm font-semibold">
-                        {home?.name}
+                        {m.team_home ?? "—"}
                       </span>
                     </div>
                     <span className="font-display text-xs text-muted-foreground">
@@ -122,15 +139,15 @@ export function HomeView() {
                     </span>
                     <div className="flex items-center justify-end gap-2">
                       <span className="truncate text-right text-sm font-semibold">
-                        {away?.name}
+                        {m.team_away ?? "—"}
                       </span>
-                      <Flag code={m.away} width={24} />
+                      <Flag code={m.flag_away ?? "XX"} width={24} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
+            ))
+          )}
         </div>
       </motion.section>
 
@@ -142,7 +159,7 @@ export function HomeView() {
           to="/grupos"
           icon={<LayoutGrid className="size-5" />}
           title="Fase de Grupos"
-          description="Pronosticá los 6 partidos de cada zona."
+          description="Pronosticá los partidos de cada zona."
         />
         <QuickAction
           to="/eliminatorias"
@@ -161,21 +178,28 @@ export function HomeView() {
   );
 }
 
-function TeamPreview({ code, reverse }: { code: string; reverse?: boolean }) {
-  const team = getTeam(code);
+function TeamPreview({
+  flag,
+  name,
+  reverse,
+}: {
+  flag: string | null;
+  name: string;
+  reverse?: boolean;
+}) {
   return (
     <div
       className={`flex items-center gap-3 ${
         reverse ? "flex-row-reverse text-right" : ""
       }`}
     >
-      <Flag code={code} width={48} />
+      <Flag code={flag ?? "XX"} width={48} />
       <div>
         <div className="font-mono-label text-[0.6rem] uppercase tracking-wider text-muted-foreground">
-          {code}
+          {flag ?? "—"}
         </div>
         <div className="font-display text-xl font-bold leading-tight tracking-tight text-foreground">
-          {team?.name}
+          {name}
         </div>
       </div>
     </div>

@@ -1,15 +1,36 @@
 import { motion } from "framer-motion";
 import { Trophy, Target, BarChart3 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Flag } from "@/lib/flags";
 import { ProfileHero } from "@/components/prode/ProfileHero";
 import { fadeUp, staggerContainer } from "@/lib/motion";
-import { usePredictionsStore } from "@/stores/predictions.store";
-import { groupMatches, knockoutMatches } from "@/data/matches";
+import { usePredictions } from "@/hooks/usePredictions";
+import { useFixtures } from "@/hooks/useFixtures";
+import { useCurrentUserStats } from "@/hooks/useLeaderboard";
+import { formatMatchDate } from "@/lib/format";
 
 export function PerfilView() {
-  const count = usePredictionsStore((s) => Object.keys(s.byMatch).length);
-  const total = groupMatches.length + knockoutMatches.length;
+  const stats = useCurrentUserStats();
+  const { predictions, isLoading: loadingPredictions } = usePredictions();
+  const { fixtures, isLoading: loadingFixtures } = useFixtures();
+
+  const totalFixtures = fixtures.length;
+  const totalPredictions = predictions.length;
+
+  const fixturesById = new Map(fixtures.map((f) => [f.id, f]));
+
+  const history = predictions.slice(0, 5).map((p) => ({
+    prediction: p,
+    fixture: fixturesById.get(p.fixture_id),
+  }));
 
   return (
     <motion.div
@@ -35,19 +56,23 @@ export function PerfilView() {
             <StatTile
               icon={<Target className="size-4" />}
               label="Predicciones cargadas"
-              value={`${count} / ${total}`}
+              value={
+                loadingFixtures || loadingPredictions
+                  ? "…"
+                  : `${totalPredictions} / ${totalFixtures}`
+              }
               variant="default"
             />
             <StatTile
               icon={<Trophy className="size-4" />}
               label="Aciertos totales"
-              value="0"
+              value={stats.isLoading ? "…" : String(stats.winnerHits)}
               variant="gold"
             />
             <StatTile
               icon={<Trophy className="size-4" />}
               label="Resultados exactos"
-              value="0"
+              value={stats.isLoading ? "…" : String(stats.exactHits)}
               variant="primary"
             />
           </CardContent>
@@ -63,7 +88,13 @@ export function PerfilView() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {count === 0 ? (
+            {loadingPredictions ? (
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : history.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-8 text-center">
                 <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-muted-foreground">
                   Sin actividad
@@ -75,17 +106,58 @@ export function PerfilView() {
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {Array.from({ length: count }).slice(0, 5).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between rounded-md border border-border/40 bg-muted/20 px-3 py-2"
-                  >
-                    <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-muted-foreground">
-                      Partido · {i + 1}
-                    </span>
-                    <Badge variant="outline">Pendiente</Badge>
-                  </div>
-                ))}
+                {history.map(({ prediction, fixture }) => {
+                  const points = prediction.points;
+                  const badgeVariant =
+                    points === null
+                      ? "outline"
+                      : points >= 3
+                      ? "gold"
+                      : points >= 1
+                      ? "default"
+                      : "outline";
+                  const badgeLabel =
+                    points === null
+                      ? "Pendiente"
+                      : points === 0
+                      ? "0 pts"
+                      : `+${points} pts`;
+
+                  return (
+                    <div
+                      key={prediction.id}
+                      className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-muted/20 px-3 py-2"
+                    >
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        {fixture ? (
+                          <>
+                            <div className="flex items-center gap-1.5">
+                              <Flag code={fixture.flag_home ?? "XX"} width={20} />
+                              <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+                                vs
+                              </span>
+                              <Flag code={fixture.flag_away ?? "XX"} width={20} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-xs font-semibold text-foreground">
+                                {fixture.team_home} vs {fixture.team_away}
+                              </p>
+                              <span className="font-mono-label text-[0.6rem] uppercase tracking-wider text-muted-foreground">
+                                {formatMatchDate(fixture.date)} ·{" "}
+                                {prediction.pred_home}-{prediction.pred_away}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+                            Partido · {prediction.fixture_id.slice(0, 6)}
+                          </span>
+                        )}
+                      </div>
+                      <Badge variant={badgeVariant}>{badgeLabel}</Badge>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>

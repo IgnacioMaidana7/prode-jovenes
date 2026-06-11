@@ -1,63 +1,100 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { supabase } from "@/lib/supabase";
+import type { Player } from "@/types";
 
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string;
-  points: number;
-  rank: number;
-};
+const PLAYER_ID_KEY = "prode.player_id";
+const USERNAME_KEY = "prode.username";
 
 type AuthState = {
-  user: User | null;
+  player: Player | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+
+  initialize: () => void;
+  enterGame: (username: string) => Promise<void>;
   logout: () => void;
-  updatePoints: (delta: number) => void;
 };
 
-const MOCK_USER: User = {
-  id: "u-001",
-  name: "Hincha",
-  email: "hincha@prode.ar",
-  points: 1250,
-  rank: 8,
-};
+function readFromStorage(): Player | null {
+  if (typeof window === "undefined") return null;
+  const id = window.localStorage.getItem(PLAYER_ID_KEY);
+  const username = window.localStorage.getItem(USERNAME_KEY);
+  if (!id || !username) return null;
+  return { id, username };
+}
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: MOCK_USER,
-      isAuthenticated: true,
-      login: async (email) => {
-        await new Promise((r) => setTimeout(r, 600));
-        set({
-          user: { ...MOCK_USER, email: email || MOCK_USER.email },
-          isAuthenticated: true,
-        });
-      },
-      logout: () => {
-        set({ user: null, isAuthenticated: false });
-      },
-      updatePoints: (delta) => {
-        set((state) =>
-          state.user
-            ? { user: { ...state.user, points: state.user.points + delta } }
-            : state
-        );
-      },
-    }),
-    {
-      name: "prode.auth",
-      storage: createJSONStorage(() => localStorage),
+function persist(player: Player) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(PLAYER_ID_KEY, player.id);
+  window.localStorage.setItem(USERNAME_KEY, player.username);
+}
+
+function clearStorage() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(PLAYER_ID_KEY);
+  window.localStorage.removeItem(USERNAME_KEY);
+}
+
+function generateId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  // Fallback muy improbable (navegadores modernos siempre tienen crypto.randomUUID)
+  return "p_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+const initialPlayer = readFromStorage();
+
+export const useAuthStore = create<AuthState>()((set) => ({
+  player: initialPlayer,
+  isAuthenticated: !!initialPlayer,
+
+  initialize: () => {
+    const player = readFromStorage();
+    set({ player, isAuthenticated: !!player });
+  },
+
+  enterGame: async (rawUsername) => {
+    const username = rawUsername.trim();
+    if (username.length < 2) {
+      throw new Error("El nombre tiene que tener al menos 2 caracteres.");
     }
-  )
-);
 
-export const useUser = () => useAuthStore((s) => s.user);
-export const useIsAuthenticated = () =>
-  useAuthStore((s) => s.isAuthenticated);
-export const useLogin = () => useAuthStore((s) => s.login);
+    const id = generateId();
+    const player: Player = { id, username };
+
+    const { error } = await supabase
+      .from("profiles")
+      .insert({
+        id,
+        username,
+        avatar_url: null,
+        is_admin: false,
+      });
+
+    if (error) {
+      throw new Error(
+        error.message || "No pudimos registrarte. Probá de nuevo."
+      );
+    }
+
+    persist(player);
+    set({ player, isAuthenticated: true });
+  },
+
+  logout: () => {
+    clearStorage();
+    set({ player: null, isAuthenticated: false });
+  },
+}));
+
+/* TODO(admin):
+ * Para el panel admin, agregar:
+ *   - useIsAdmin() que lea profiles.is_admin del player actual
+ *   - un fetchProfile(id) que cachee el resultado y exponga el flag
+ *   - rutas protegidas para /admin/*
+ */
+
+export const usePlayer = () => useAuthStore((s) => s.player);
+export const useIsAuthenticated = () => useAuthStore((s) => s.isAuthenticated);
+export const useEnterGame = () => useAuthStore((s) => s.enterGame);
 export const useLogout = () => useAuthStore((s) => s.logout);

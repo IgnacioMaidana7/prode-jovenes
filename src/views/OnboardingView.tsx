@@ -1,27 +1,46 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Trophy } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, Trophy, User } from "lucide-react";
+import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BrandLogo } from "@/components/prode/BrandLogo";
-import { useLogin } from "@/stores/auth.store";
+import {
+  useEnterGame,
+  useIsAuthenticated,
+} from "@/stores/auth.store";
 import { fadeUp, scaleIn, staggerContainer, staggerItem } from "@/lib/motion";
 
 const schema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
+  username: z
+    .string()
+    .trim()
+    .min(2, "Mínimo 2 caracteres")
+    .max(20, "Máximo 20 caracteres"),
 });
 
 type FormValues = z.infer<typeof schema>;
 
-export function LoginView() {
-  const login = useLogin();
+export function OnboardingView() {
   const navigate = useNavigate();
+  const enterGame = useEnterGame();
+  const isAuthenticated = useIsAuthenticated();
+
+  useEffect(() => {
+    if (isAuthenticated) navigate("/", { replace: true });
+  }, [isAuthenticated, navigate]);
 
   const {
     register,
@@ -29,12 +48,18 @@ export function LoginView() {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "hincha@prode.ar", password: "pasosxd" },
+    defaultValues: { username: "" },
   });
 
   const onSubmit = handleSubmit(async (values) => {
-    await login(values.email, values.password);
-    navigate("/");
+    try {
+      await enterGame(values.username);
+      navigate("/", { replace: true });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "No pudimos registrarte."
+      );
+    }
   });
 
   return (
@@ -56,9 +81,10 @@ export function LoginView() {
               <span className="mb-2 inline-flex size-12 items-center justify-center rounded-full bg-primary/15 text-primary ring-1 ring-primary/30">
                 <Trophy className="size-6" />
               </span>
-              <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
+              <CardTitle className="text-2xl">¿Cómo te llamamos?</CardTitle>
               <CardDescription>
-                Demostrá que sos el que más sabe de fútbol.
+                Elegí un nombre para aparecer en el ranking. Es lo único que
+                necesitamos para arrancar.
               </CardDescription>
             </CardHeader>
             <CardContent className="relative">
@@ -68,49 +94,22 @@ export function LoginView() {
                 noValidate
               >
                 <motion.div variants={fadeUp} className="flex flex-col gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="username">Tu nombre</Label>
                   <div className="relative">
-                    <Mail className="pointer-events-none absolute top-1/2 left-0 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <User className="pointer-events-none absolute top-1/2 left-0 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
+                      id="username"
+                      autoComplete="nickname"
+                      autoFocus
+                      placeholder="Toto, Martu, Pipe…"
                       className="pl-6"
-                      aria-invalid={!!errors.email}
-                      {...register("email")}
+                      aria-invalid={!!errors.username}
+                      {...register("username")}
                     />
                   </div>
-                  {errors.email && (
+                  {errors.username && (
                     <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-destructive">
-                      {errors.email.message}
-                    </span>
-                  )}
-                </motion.div>
-
-                <motion.div variants={fadeUp} className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Contraseña</Label>
-                    <Link
-                      to="#"
-                      className="font-mono-label text-[0.65rem] uppercase tracking-wider text-muted-foreground transition-colors hover:text-primary"
-                    >
-                      ¿Olvidaste?
-                    </Link>
-                  </div>
-                  <div className="relative">
-                    <Lock className="pointer-events-none absolute top-1/2 left-0 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      autoComplete="current-password"
-                      className="pl-6"
-                      aria-invalid={!!errors.password}
-                      {...register("password")}
-                    />
-                  </div>
-                  {errors.password && (
-                    <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-destructive">
-                      {errors.password.message}
+                      {errors.username.message}
                     </span>
                   )}
                 </motion.div>
@@ -123,20 +122,15 @@ export function LoginView() {
                     className="w-full"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? "Ingresando…" : "Ingresar"}
+                    {isSubmitting ? "Entrando…" : "Entrar al prode"}
+                    {!isSubmitting && <ArrowRight />}
                   </Button>
                 </motion.div>
               </form>
             </CardContent>
             <div className="relative border-t border-border/40 p-5 text-center">
-              <span className="text-sm text-muted-foreground">
-                ¿No tenés cuenta?{" "}
-                <Link
-                  to="#"
-                  className="font-semibold text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
-                >
-                  Registrate
-                </Link>
+              <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+                Sin mail · sin contraseña · sin vueltas
               </span>
             </div>
           </Card>

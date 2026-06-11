@@ -5,19 +5,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LiveBadge } from "@/components/prode/LiveBadge";
 import { ScoreInput } from "@/components/prode/ScoreInput";
 import { cardHover, fadeUp } from "@/lib/motion";
-import { getTeam } from "@/data/teams";
 import { formatMatchDate, formatMatchTime } from "@/lib/format";
-import type { GroupMatch } from "@/data/matches";
+import type { Fixture } from "@/types";
 import { cn } from "@/lib/utils";
 
 type Props = {
-  match: GroupMatch;
+  match: Fixture;
 };
 
+const LIVE_STATUSES = new Set(["LIVE", "IN_PLAY", "PAUSED"]);
+
 export function GroupMatchCard({ match }: Props) {
-  const home = getTeam(match.home);
-  const away = getTeam(match.away);
-  const isLive = match.status === "live";
+  const isLive = LIVE_STATUSES.has(match.status);
+  const isFinished = match.status === "FINISHED";
 
   return (
     <motion.div variants={fadeUp} {...cardHover}>
@@ -38,6 +38,10 @@ export function GroupMatchCard({ match }: Props) {
             </span>
             {isLive ? (
               <LiveBadge />
+            ) : isFinished ? (
+              <Badge variant="outline" className="text-[0.6rem]">
+                FINALIZADO
+              </Badge>
             ) : (
               <Badge variant="outline" className="text-[0.6rem]">
                 PRONOSTICÁ
@@ -46,13 +50,29 @@ export function GroupMatchCard({ match }: Props) {
           </div>
 
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-            <TeamSide code={match.home} name={home?.name ?? match.home} side="left" />
-            <div className="font-display text-xs text-muted-foreground">VS</div>
-            <TeamSide code={match.away} name={away?.name ?? match.away} side="right" />
+            <TeamSide
+              code={match.flag_home}
+              name={match.team_home ?? "—"}
+              side="left"
+            />
+            <div className="font-display text-xs text-muted-foreground">
+              {isFinished ? (
+                <span className="font-display text-base font-bold tabular-nums text-foreground">
+                  {match.result_home ?? 0} - {match.result_away ?? 0}
+                </span>
+              ) : (
+                "VS"
+              )}
+            </div>
+            <TeamSide
+              code={match.flag_away}
+              name={match.team_away ?? "—"}
+              side="right"
+            />
           </div>
 
           <div className="flex items-center justify-center border-t border-border/40 pt-3">
-            <ScoreInput matchId={match.id} />
+            <ScoreInput fixture={match} />
           </div>
         </CardContent>
       </Card>
@@ -65,7 +85,7 @@ function TeamSide({
   name,
   side,
 }: {
-  code: string;
+  code: string | null;
   name: string;
   side: "left" | "right";
 }) {
@@ -76,10 +96,10 @@ function TeamSide({
         side === "right" && "flex-row-reverse text-right"
       )}
     >
-      <Flag code={code} width={32} />
+      <Flag code={code ?? "XX"} width={32} />
       <div className="min-w-0 flex-1">
         <div className="font-mono-label text-[0.6rem] uppercase tracking-wider text-muted-foreground">
-          {code}
+          {code ?? "—"}
         </div>
         <div className="truncate text-sm font-semibold text-foreground">
           {name}

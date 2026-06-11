@@ -3,25 +3,26 @@ import { Flag } from "@/lib/flags";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScoreInput } from "@/components/prode/ScoreInput";
 import { cardHover, fadeUp } from "@/lib/motion";
-import { getTeam } from "@/data/teams";
 import { cn } from "@/lib/utils";
-import type { KnockoutMatch, KnockoutRound } from "@/data/matches";
+import type { Fixture, FixtureStage } from "@/types";
 
-const roundLabel: Record<KnockoutRound, string> = {
+const roundLabel: Record<FixtureStage, string> = {
+  GROUP: "Grupo",
   R16: "Octavos",
   QF: "Cuartos",
   SF: "Semis",
   F: "Final",
+  "3RD": "3er Puesto",
 };
 
 type Props = {
-  match: KnockoutMatch;
+  match: Fixture;
   variant?: "default" | "final";
 };
 
 export function BracketNode({ match }: Props) {
-  const isPending = !match.home || !match.away;
-  const isFinal = match.round === "F";
+  const isPending = !match.team_home || !match.team_away;
+  const isFinal = match.stage === "F";
 
   return (
     <motion.div
@@ -33,7 +34,8 @@ export function BracketNode({ match }: Props) {
         size="sm"
         className={cn(
           "relative overflow-hidden",
-          isFinal && "ring-2 ring-primary/40 bg-gradient-to-br from-card to-primary/5",
+          isFinal &&
+            "ring-2 ring-primary/40 bg-gradient-to-br from-card to-primary/5",
           isPending && !isFinal && "opacity-80"
         )}
       >
@@ -43,7 +45,7 @@ export function BracketNode({ match }: Props) {
         <CardContent className="relative flex flex-col gap-2.5">
           <div className="flex items-center justify-between">
             <span className="font-mono-label text-[0.6rem] uppercase tracking-wider text-muted-foreground">
-              {roundLabel[match.round]}
+              {roundLabel[match.stage]}
             </span>
             {isPending && (
               <span className="font-mono-label text-[0.6rem] uppercase tracking-wider text-accent">
@@ -53,20 +55,14 @@ export function BracketNode({ match }: Props) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <TeamRow
-              code={match.home}
-              isWinner={isFinal && !isPending}
-            />
+            <TeamRow code={match.flag_home} name={match.team_home} />
             <div className="h-px w-full bg-border/40" />
-            <TeamRow
-              code={match.away}
-              isWinner={isFinal && !isPending}
-            />
+            <TeamRow code={match.flag_away} name={match.team_away} />
           </div>
 
           {!isPending && !isFinal && (
             <div className="flex items-center justify-center border-t border-border/40 pt-2.5">
-              <ScoreInput matchId={match.id} />
+              <ScoreInput fixture={match} />
             </div>
           )}
         </CardContent>
@@ -77,12 +73,12 @@ export function BracketNode({ match }: Props) {
 
 function TeamRow({
   code,
-  isWinner,
+  name,
 }: {
   code: string | null;
-  isWinner?: boolean;
+  name: string | null;
 }) {
-  if (!code) {
+  if (!code || !name) {
     return (
       <div className="flex items-center gap-2.5">
         <span className="inline-block size-7 rounded-sm border border-dashed border-border bg-muted/30" />
@@ -92,18 +88,12 @@ function TeamRow({
       </div>
     );
   }
-  const team = getTeam(code);
   return (
     <div className="flex items-center gap-2.5">
       <Flag code={code} width={28} />
       <div className="flex-1 truncate text-sm font-semibold text-foreground">
-        {team?.name ?? code}
+        {name}
       </div>
-      {isWinner && (
-        <span className="font-mono-label text-[0.6rem] uppercase tracking-wider text-accent">
-          Finalista
-        </span>
-      )}
     </div>
   );
 }
