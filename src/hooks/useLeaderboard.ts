@@ -8,13 +8,28 @@ const GLOBAL_KEY = ["leaderboard", "global"] as const;
 const GROUP_KEY = (groupId: string) =>
   ["leaderboard", "group", groupId] as const;
 
+function withDenseRank<T extends { total_points: number; rank: number }>(
+  rows: T[]
+): T[] {
+  const sorted = [...rows].sort((a, b) => b.total_points - a.total_points);
+  let dense = 0;
+  let prevPoints: number | null = null;
+  return sorted.map((row) => {
+    if (row.total_points !== prevPoints) {
+      dense += 1;
+      prevPoints = row.total_points;
+    }
+    return { ...row, rank: dense };
+  });
+}
+
 async function fetchGlobalLeaderboard(): Promise<LeaderboardEntry[]> {
   const { data, error } = await supabase
     .from("ranking_global")
     .select("*")
     .order("rank", { ascending: true });
   if (error) throw error;
-  return (data ?? []) as LeaderboardEntry[];
+  return withDenseRank((data ?? []) as LeaderboardEntry[]);
 }
 
 async function fetchGroupLeaderboard(
@@ -26,7 +41,7 @@ async function fetchGroupLeaderboard(
     .eq("group_id", groupId)
     .order("rank", { ascending: true });
   if (error) throw error;
-  return (data ?? []) as GroupLeaderboardEntry[];
+  return withDenseRank((data ?? []) as GroupLeaderboardEntry[]);
 }
 
 export const globalLeaderboardQuery = queryOptions({
