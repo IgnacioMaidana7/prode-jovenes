@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     const player: Player = {
       id: data.id,
       username: data.username,
-      dni: data.dni,
+      dni: data.dni ?? dni,
     };
 
     persist(player);
