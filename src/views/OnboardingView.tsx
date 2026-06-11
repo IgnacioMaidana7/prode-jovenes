@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowRight, Trophy, User, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { BrandLogo } from "@/components/prode/BrandLogo";
 import {
   useEnterGame,
@@ -37,21 +38,16 @@ const registerSchema = z.object({
 type DniValues = z.infer<typeof dniSchema>;
 type RegisterValues = z.infer<typeof registerSchema>;
 
-const inputWrapperStyle: React.CSSProperties = {
-  backgroundColor: "var(--input)",
-  borderColor: "oklch(0.58 0.045 75 / 0.45)",
+const stepDniVariants = {
+  hidden: { opacity: 0, x: -20 },
+  show: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: 20 },
 };
 
-const inputStyle: React.CSSProperties = {
-  color: "var(--foreground)",
-  backgroundColor: "transparent",
-  fontSize: "0.875rem",
-  width: "100%",
-  outline: "none",
-  border: "none",
-  padding: 0,
-  margin: 0,
-  lineHeight: "1.5",
+const stepRegisterVariants = {
+  hidden: { opacity: 0, x: 20 },
+  show: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -20 },
 };
 
 export function OnboardingView() {
@@ -124,15 +120,16 @@ export function OnboardingView() {
 
         <motion.div variants={scaleIn}>
           <div className="relative overflow-hidden rounded-xl bg-card ring-1 ring-border/40">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-accent/8" />
+            <div className="pointer-events-none absolute inset-0 from-primary/8 via-transparent to-accent/8" />
 
             <AnimatePresence mode="wait">
               {step === "dni" ? (
                 <motion.div
                   key="dni"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
+                  variants={stepDniVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
                   transition={{ duration: 0.2 }}
                   className="relative px-6 pt-6 pb-2"
                 >
@@ -163,20 +160,16 @@ export function OnboardingView() {
                       >
                         Tu DNI
                       </label>
-                      <div
-                        className="flex h-11 items-center gap-3 rounded-lg border px-3 transition-colors focus-within:border-primary"
-                        style={inputWrapperStyle}
-                      >
-                        <CreditCard className="size-4 shrink-0 text-muted-foreground" />
-                        <input
+                      <div className="relative">
+                        <CreditCard className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
                           id="dni"
                           type="text"
                           inputMode="numeric"
                           autoComplete="off"
                           autoFocus
                           placeholder="12345678"
-                          style={inputStyle}
-                          className="placeholder:text-muted-foreground/60"
+                          className="h-11 pl-10"
                           aria-invalid={!!dniForm.formState.errors.dni}
                           {...dniForm.register("dni")}
                         />
@@ -205,9 +198,10 @@ export function OnboardingView() {
               ) : (
                 <motion.div
                   key="register"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
+                  variants={stepRegisterVariants}
+                  initial="hidden"
+                  animate="show"
+                  exit="exit"
                   transition={{ duration: 0.2 }}
                   className="relative px-6 pt-6 pb-2"
                 >
@@ -241,19 +235,15 @@ export function OnboardingView() {
                       >
                         Tu nombre
                       </label>
-                      <div
-                        className="flex h-11 items-center gap-3 rounded-lg border px-3 transition-colors focus-within:border-primary"
-                        style={inputWrapperStyle}
-                      >
-                        <User className="size-4 shrink-0 text-muted-foreground" />
-                        <input
+                      <div className="relative">
+                        <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
                           id="username"
                           type="text"
                           autoComplete="nickname"
                           autoFocus
                           placeholder="Toto, Martu, Pipe…"
-                          style={{ ...inputStyle, caretColor: "var(--primary)" }}
-                          className="placeholder:text-muted-foreground/60"
+                          className="h-11 pl-10"
                           aria-invalid={!!registerForm.formState.errors.username}
                           {...registerForm.register("username")}
                         />

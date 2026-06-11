@@ -165,6 +165,17 @@
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "ss01", "cv01", "cv02";
   }
+  input,
+  textarea,
+  select {
+    color: var(--foreground);
+    background-color: transparent;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--muted-foreground);
+    opacity: 1;
+  }
   ::selection {
     background: oklch(0.74 0.165 55 / 0.35);
     color: oklch(0.98 0.01 80);
