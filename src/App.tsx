@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   createBrowserRouter,
   Navigate,
@@ -13,7 +14,7 @@ import { GruposView } from "@/views/GruposView";
 import { EliminatoriasView } from "@/views/EliminatoriasView";
 import { LeaderboardView } from "@/views/LeaderboardView";
 import { PerfilView } from "@/views/PerfilView";
-import { useIsAuthenticated } from "@/stores/auth.store";
+import { useIsAuthenticated, useAuthStore } from "@/stores/auth.store";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +56,12 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
+  const initialize = useAuthStore((s) => s.initialize);
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />

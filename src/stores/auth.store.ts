@@ -5,13 +5,14 @@ import type { Player } from "@/types";
 const PLAYER_ID_KEY = "prode.player_id";
 const USERNAME_KEY = "prode.username";
 const DNI_KEY = "prode.dni";
+const CHAMPION_KEY = "prode.champion";
 
 type AuthState = {
   player: Player | null;
   isAuthenticated: boolean;
 
   initialize: () => void;
-  enterGame: (dni: string, username: string) => Promise<void>;
+  enterGame: (dni: string, username: string, champion: string) => Promise<void>;
   loginWithDni: (dni: string) => Promise<boolean>;
   logout: () => void;
 };
@@ -19,10 +20,11 @@ type AuthState = {
 function readFromStorage(): Player | null {
   if (typeof window === "undefined") return null;
   const id = window.localStorage.getItem(PLAYER_ID_KEY);
-  const username = window.localStorage.getItem(USERNAME_KEY);
-  const dni = window.localStorage.getItem(DNI_KEY);
-  if (!id || !username || !dni) return null;
-  return { id, username, dni };
+  if (!id) return null;
+  const username = window.localStorage.getItem(USERNAME_KEY) || "";
+  const dni = window.localStorage.getItem(DNI_KEY) || "";
+  const champion = window.localStorage.getItem(CHAMPION_KEY) || undefined;
+  return { id, username, dni, champion };
 }
 
 function persist(player: Player) {
@@ -30,6 +32,11 @@ function persist(player: Player) {
   window.localStorage.setItem(PLAYER_ID_KEY, player.id);
   window.localStorage.setItem(USERNAME_KEY, player.username);
   window.localStorage.setItem(DNI_KEY, player.dni);
+  if (player.champion) {
+    window.localStorage.setItem(CHAMPION_KEY, player.champion);
+  } else {
+    window.localStorage.removeItem(CHAMPION_KEY);
+  }
 }
 
 function clearStorage() {
@@ -37,6 +44,7 @@ function clearStorage() {
   window.localStorage.removeItem(PLAYER_ID_KEY);
   window.localStorage.removeItem(USERNAME_KEY);
   window.localStorage.removeItem(DNI_KEY);
+  window.localStorage.removeItem(CHAMPION_KEY);
 }
 
 function generateId(): string {
@@ -52,9 +60,33 @@ export const useAuthStore = create<AuthState>()((set) => ({
   player: initialPlayer,
   isAuthenticated: !!initialPlayer,
 
-  initialize: () => {
+  initialize: async () => {
     const player = readFromStorage();
-    set({ player, isAuthenticated: !!player });
+    if (!player) {
+      set({ player: null, isAuthenticated: false });
+      return;
+    }
+    set({ player, isAuthenticated: true });
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", player.id)
+        .maybeSingle();
+      if (data && !error) {
+        const updatedPlayer: Player = {
+          id: data.id,
+          username: data.username,
+          dni: data.dni || player.dni,
+          champion: data.champion || undefined,
+        };
+        persist(updatedPlayer);
+        set({ player: updatedPlayer, isAuthenticated: true });
+      }
+    } catch (err) {
+      console.error("Error updating player profile on initialize:", err);
+    }
   },
 
   loginWithDni: async (rawDni) => {
@@ -81,6 +113,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       id: data.id,
       username: data.username,
       dni: data.dni ?? dni,
+      champion: data.champion ?? undefined,
     };
 
     persist(player);
@@ -88,7 +121,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     return true;
   },
 
-  enterGame: async (rawDni, rawUsername) => {
+  enterGame: async (rawDni, rawUsername, champion) => {
     const dni = rawDni.trim();
     const username = rawUsername.trim();
 
@@ -97,6 +130,14 @@ export const useAuthStore = create<AuthState>()((set) => ({
     }
     if (username.length < 2) {
       throw new Error("El nombre tiene que tener al menos 2 caracteres.");
+    }
+    if (!champion) {
+      throw new Error("Tenés que seleccionar un campeón.");
+    }
+
+    const KICKOFF_DATE = new Date("2026-06-20T21:00:00Z");
+    if (new Date() > KICKOFF_DATE) {
+      throw new Error("El torneo ya ha comenzado. No es posible seleccionar o modificar el campeón.");
     }
 
     const { data: existing } = await supabase
@@ -110,7 +151,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     }
 
     const id = generateId();
-    const player: Player = { id, username, dni };
+    const player: Player = { id, username, dni, champion };
 
     const { error } = await supabase
       .from("profiles")
@@ -120,6 +161,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
         dni,
         avatar_url: null,
         is_admin: false,
+        champion,
       });
 
     if (error) {

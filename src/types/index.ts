@@ -62,6 +62,7 @@ export type Profile = {
   dni: string | null;
   avatar_url: string | null;
   is_admin: boolean;
+  champion?: string;
   created_at: string;
 };
 
@@ -71,6 +72,7 @@ export type ProfileInsert = {
   dni?: string | null;
   avatar_url?: string | null;
   is_admin?: boolean;
+  champion?: string;
 };
 
 export type Group = {
@@ -108,6 +110,7 @@ export type Player = {
   id: string;
   username: string;
   dni: string;
+  champion?: string;
 };
 
 export type MatchKind = "group" | "knockout";

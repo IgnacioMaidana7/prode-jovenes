@@ -10,6 +10,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Flag } from "@/lib/flags";
+import { usePlayer } from "@/stores/auth.store";
+import { getCountryName } from "@/data/countries";
 import { ProfileHero } from "@/components/prode/ProfileHero";
 import { fadeUp, staggerContainer } from "@/lib/motion";
 import { usePredictions } from "@/hooks/usePredictions";
@@ -18,6 +20,7 @@ import { useCurrentUserStats } from "@/hooks/useLeaderboard";
 import { formatMatchDate } from "@/lib/format";
 
 export function PerfilView() {
+  const player = usePlayer();
   const stats = useCurrentUserStats();
   const { predictions, isLoading: loadingPredictions } = usePredictions();
   const { fixtures, isLoading: loadingFixtures } = useFixtures();
@@ -52,7 +55,7 @@ export function PerfilView() {
               Tu actividad en el torneo actual.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <CardContent className={`grid grid-cols-1 gap-3 ${player?.champion ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
             <StatTile
               icon={<Target className="size-4" />}
               label="Predicciones cargadas"
@@ -75,6 +78,19 @@ export function PerfilView() {
               value={stats.isLoading ? "…" : String(stats.exactHits)}
               variant="primary"
             />
+            {player?.champion && (
+              <StatTile
+                icon={<Trophy className="size-4" />}
+                label="Mi Campeón"
+                value={
+                  <div className="flex items-center gap-1.5 font-semibold text-accent">
+                    <Flag code={player.champion} width={20} />
+                    <span className="truncate">{getCountryName(player.champion)}</span>
+                  </div>
+                }
+                variant="gold"
+              />
+            )}
           </CardContent>
         </Card>
       </motion.section>
@@ -175,7 +191,7 @@ function StatTile({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: React.ReactNode;
   variant: "default" | "gold" | "primary";
 }) {
   return (

@@ -4,9 +4,11 @@ import { RuleCard } from "@/components/prode/RuleCard";
 import { PrizeCard } from "@/components/prode/PrizeCard";
 import { rules } from "@/data/rules";
 import { fadeUp, staggerContainer } from "@/lib/motion";
+import { usePlayer } from "@/stores/auth.store";
 
 export function ReglasView() {
   const navigate = useNavigate();
+  const player = usePlayer();
   return (
     <motion.div
       variants={staggerContainer(0.08, 0.1)}
@@ -46,6 +48,7 @@ export function ReglasView() {
               badge={rule.badge}
               icon={rule.icon}
               highlight={rule.id === "champion"}
+              chosenChampion={rule.id === "champion" ? player?.champion : undefined}
             />
           ))}
         </motion.div>

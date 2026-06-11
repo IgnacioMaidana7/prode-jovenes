@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cardHover, fadeUp } from "@/lib/motion";
 import { cn } from "@/lib/utils";
+import { Flag } from "@/lib/flags";
+import { getCountryName } from "@/data/countries";
 
 type Props = {
   title: string;
@@ -11,9 +13,10 @@ type Props = {
   badge: string;
   icon: LucideIcon;
   highlight?: boolean;
+  chosenChampion?: string;
 };
 
-export function RuleCard({ title, description, badge, icon: Icon, highlight }: Props) {
+export function RuleCard({ title, description, badge, icon: Icon, highlight, chosenChampion }: Props) {
   return (
     <motion.div variants={fadeUp} {...cardHover}>
       <Card
@@ -45,6 +48,17 @@ export function RuleCard({ title, description, badge, icon: Icon, highlight }: P
           <p className="text-sm text-pretty text-muted-foreground">
             {description}
           </p>
+          {chosenChampion && (
+            <div className="mt-auto pt-3 border-t border-border/20 flex flex-col gap-1.5">
+              <span className="font-mono-label text-[0.6rem] uppercase tracking-wider text-muted-foreground">
+                Tu Campeón:
+              </span>
+              <div className="inline-flex items-center gap-2 rounded-lg bg-accent/10 border border-accent/30 px-3 py-1.5 text-xs font-semibold text-accent self-start">
+                <Flag code={chosenChampion} width={20} />
+                <span>{getCountryName(chosenChampion)}</span>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>

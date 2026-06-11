@@ -15,6 +15,9 @@ import {
   useIsAuthenticated,
 } from "@/stores/auth.store";
 import { fadeUp, scaleIn, staggerContainer, staggerItem } from "@/lib/motion";
+import { cn } from "@/lib/utils";
+import { Flag } from "@/lib/flags";
+import { COUNTRIES } from "@/data/countries";
 
 const dniSchema = z.object({
   dni: z
@@ -33,6 +36,9 @@ const registerSchema = z.object({
     .trim()
     .min(2, "Mínimo 2 caracteres")
     .max(20, "Máximo 20 caracteres"),
+  champion: z
+    .string()
+    .min(1, "Debes seleccionar un campeón"),
 });
 
 type DniValues = z.infer<typeof dniSchema>;
@@ -49,6 +55,8 @@ const stepRegisterVariants = {
   show: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: -20 },
 };
+
+const TOURNAMENT_KICKOFF = new Date("2026-06-20T21:00:00Z");
 
 export function OnboardingView() {
   const navigate = useNavigate();
@@ -69,8 +77,17 @@ export function OnboardingView() {
 
   const registerForm = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { dni: "", username: "" },
+    defaultValues: { dni: "", username: "", champion: "" },
   });
+
+  const selectedChampion = registerForm.watch("champion");
+  const usernameValue = registerForm.watch("username");
+  const isTournamentStarted = new Date() > TOURNAMENT_KICKOFF;
+  const isRegisterSubmitDisabled =
+    !usernameValue?.trim() ||
+    !selectedChampion ||
+    isTournamentStarted ||
+    registerForm.formState.isSubmitting;
 
   const onDniSubmit = dniForm.handleSubmit(async (values) => {
     try {
@@ -91,7 +108,7 @@ export function OnboardingView() {
 
   const onRegisterSubmit = registerForm.handleSubmit(async (values) => {
     try {
-      await enterGame(values.dni, values.username);
+      await enterGame(values.dni, values.username, values.champion);
       navigate("/", { replace: true });
     } catch (err) {
       toast.error(
@@ -255,6 +272,72 @@ export function OnboardingView() {
                       )}
                     </motion.div>
 
+                    <motion.div variants={fadeUp} className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-foreground">
+                        Tu Selección Campeona 🏆
+                      </label>
+                      {isTournamentStarted ? (
+                        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive-foreground">
+                          El torneo ya ha comenzado. Ya no es posible registrarse ni seleccionar un campeón.
+                        </div>
+                      ) : (
+                        <>
+                          <span className="text-[0.7rem] text-muted-foreground leading-tight">
+                            Elegí qué selección ganará el Mundial 2026. Esta decisión no se puede cambiar.
+                          </span>
+
+                          <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-border/40 bg-muted/10 p-2 pr-1.5 scrollbar-thin">
+                            <div className="flex flex-col gap-4">
+                              {["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"].map((groupLetter) => {
+                                const groupCountries = COUNTRIES.filter(
+                                  (c) => c.group === groupLetter
+                                );
+                                return (
+                                  <div key={groupLetter} className="flex flex-col gap-1.5">
+                                    <span className="font-mono-label text-[0.6rem] uppercase tracking-wider text-primary">
+                                      Grupo {groupLetter}
+                                    </span>
+                                    <div className="grid grid-cols-4 gap-1.5">
+                                      {groupCountries.map((c) => {
+                                        const isSelected = selectedChampion === c.code;
+                                        return (
+                                          <button
+                                            key={c.code}
+                                            type="button"
+                                            onClick={() =>
+                                              registerForm.setValue("champion", c.code, {
+                                                shouldValidate: true,
+                                          })
+                                        }
+                                        className={cn(
+                                          "flex flex-col items-center justify-center rounded-md border p-1.5 gap-1 transition-all cursor-pointer",
+                                          isSelected
+                                            ? "border-primary bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary/30"
+                                            : "border-border/30 bg-card/50 text-muted-foreground hover:border-border/70 hover:bg-card"
+                                        )}
+                                      >
+                                        <Flag code={c.code} width={24} />
+                                        <span className="text-[9px] font-mono-label uppercase tracking-tight text-center truncate w-full">
+                                          {c.name}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      {registerForm.formState.errors.champion && (
+                        <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-destructive">
+                          {registerForm.formState.errors.champion.message}
+                        </span>
+                      )}
+                        </>
+                      )}
+                    </motion.div>
+
                     <motion.div variants={fadeUp} className="flex gap-2">
                       <Button
                         type="button"
@@ -270,11 +353,11 @@ export function OnboardingView() {
                         variant="gradient"
                         size="lg"
                         className="flex-1"
-                        disabled={registerForm.formState.isSubmitting}
+                        disabled={isRegisterSubmitDisabled}
                       >
                         {registerForm.formState.isSubmitting
                           ? "Registrando…"
-                          : "Registrarme"}
+                          : "Entrar al prode"}
                         {!registerForm.formState.isSubmitting && <ArrowRight />}
                       </Button>
                     </motion.div>
