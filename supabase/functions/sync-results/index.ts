@@ -60,6 +60,7 @@ const FLAG_CODES: Record<string, string> = {
   Bolivia: 'BO', Venezuela: 'VE', Jamaica: 'JM', Honduras: 'HN',
   'El Salvador': 'SV', 'Trinidad and Tobago': 'TT', Cameroon: 'CM',
   Greece: 'GR', Ireland: 'IE', Nigeria: 'NG', Kenya: 'KE',
+  'Democratic Republic of the Congo': 'CD',
 }
 
 const TEAM_NAMES_ES: Record<string, string> = {
@@ -88,6 +89,7 @@ const TEAM_NAMES_ES: Record<string, string> = {
   Honduras: 'Honduras', 'El Salvador': 'El Salvador',
   'Trinidad and Tobago': 'Trinidad y Tobago', Cameroon: 'Camerún',
   Greece: 'Grecia', Ireland: 'Irlanda', Nigeria: 'Nigeria', Kenya: 'Kenia',
+  'Democratic Republic of the Congo': 'RD del Congo',
 }
 
 // "MM/DD/YYYY HH:MM" (hora local del estadio) → ISO UTC string
@@ -142,7 +144,7 @@ Deno.serve(async () => {
       try {
         const externalId = Number(game.id)
         const stage = STAGE_MAP[game.type] ?? 'GROUP'
-        // group field is the letter for group stage, "R32" etc for knockout
+        // Para fase de grupos: "A"-"L". Para eliminatorias: null.
         const groupName: string | null =
           game.type === 'group' ? (game.group ?? null) : null
 
@@ -173,11 +175,13 @@ Deno.serve(async () => {
           result_home: resultHome,
           result_away: resultAway,
           status,
+          stage,
+          group_name: groupName,
           team_home: teamHomeES,
           team_away: teamAwayES,
           flag_home: flagHome,
           flag_away: flagAway,
-          date: isoDate, // siempre actualizar con la timezone correcta del estadio
+          date: isoDate,
         }
 
         let fixtureId: string
