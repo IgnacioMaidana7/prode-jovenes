@@ -17,6 +17,7 @@ const rounds: {
   label: string;
   direction: "left" | "right" | "center";
 }[] = [
+  { id: "R32", label: "Ronda de 32", direction: "left" },
   { id: "R16", label: "Octavos", direction: "left" },
   { id: "QF", label: "Cuartos", direction: "left" },
   { id: "SF", label: "Semis", direction: "right" },

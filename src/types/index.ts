@@ -9,7 +9,7 @@
 
 /* ─────────────────────────  Dominio  ───────────────────────── */
 
-export type FixtureStage = "GROUP" | "R16" | "QF" | "SF" | "F" | "3RD";
+export type FixtureStage = "GROUP" | "R32" | "R16" | "QF" | "SF" | "F" | "3RD";
 
 export type FixtureStatus =
   | "SCHEDULED"
