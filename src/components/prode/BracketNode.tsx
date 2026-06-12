@@ -8,6 +8,7 @@ import type { Fixture, FixtureStage } from "@/types";
 
 const roundLabel: Record<FixtureStage, string> = {
   GROUP: "Grupo",
+  R32: "Ronda de 32",
   R16: "Octavos",
   QF: "Cuartos",
   SF: "Semis",

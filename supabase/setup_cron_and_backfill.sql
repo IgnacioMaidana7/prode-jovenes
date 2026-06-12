@@ -17,29 +17,28 @@ WHERE p.fixture_id = f.id
 
 
 -- ═══════════════════════════════════════════════════════
--- 2. Cron: llamar al Edge Function cada 20 minutos
---    (72 req/día < límite de 100 de football-data.org)
---    Requiere habilitar pg_cron en Supabase:
+-- 2. Cron: llamar al Edge Function cada 5 minutos
+--    Sin límite de API, sin key necesaria.
+--    Requiere extensión pg_cron habilitada:
 --    Dashboard → Database → Extensions → pg_cron
+--    También requiere extensión pg_net (viene habilitada por defecto)
 -- ═══════════════════════════════════════════════════════
 
--- Primero eliminar el cron anterior si existe
+-- Eliminar cron anterior si existe
 SELECT cron.unschedule('sync-results')
 WHERE EXISTS (
   SELECT 1 FROM cron.job WHERE jobname = 'sync-results'
 );
 
--- Crear nuevo cron cada 20 minutos
--- Reemplazá <PROJECT_REF> con: ijztsbkcfrbxvprzsqkq
--- Reemplazá <ANON_KEY> con tu anon key del .env
-SELECT cron.schedule(
-  'sync-results',
-  '*/20 * * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://ijztsbkcfrbxvprzsqkq.supabase.co/functions/v1/sync-results',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenRzYmtjZnJieHZwcnpzcWtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjgzODMsImV4cCI6MjA5NjcwNDM4M30.-kR9prD9KdaOTpU83jCxN66g7lpX0xJ1YGkbzv7AuMk"}'::jsonb,
-    body := '{}'::jsonb
+-- Crear cron cada 5 minutos
+  SELECT cron.schedule(
+    'sync-results',
+    '*/5 * * * *',
+    $$
+    SELECT net.http_post(
+      url := 'https://ijztsbkcfrbxvprzsqkq.supabase.co/functions/v1/sync-results',
+      headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlqenRzYmtjZnJieHZwcnpzcWtxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjgzODMsImV4cCI6MjA5NjcwNDM4M30.-kR9prD9KdaOTpU83jCxN66g7lpX0xJ1YGkbzv7AuMk"}'::jsonb,
+      body := '{}'::jsonb
+    );
+    $$
   );
-  $$
-);
