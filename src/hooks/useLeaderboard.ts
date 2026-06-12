@@ -92,16 +92,18 @@ async function fetchPlayerRecentPredictions(
     .from("predictions")
     .select(
       `id, fixture_id, pred_home, pred_away, points,
-       fixture:fixtures(team_home, team_away, flag_home, flag_away, result_home, result_away, status, date)`
+       fixture:fixtures!fixture_id(team_home, team_away, flag_home, flag_away, result_home, result_away, status, date)`
     )
     .eq("player_id", playerId);
   if (error) throw error;
 
-  return ((data ?? []) as PredictionWithFixture[])
-    .filter(
-      (p) =>
-        p.fixture?.status === "FINISHED" && p.fixture.result_home !== null
-    )
+  const rows = (data ?? []) as PredictionWithFixture[];
+  return rows
+    .filter((p) => {
+      const f = p.fixture;
+      if (!f) return false;
+      return f.status === "FINISHED" && f.result_home !== null;
+    })
     .sort(
       (a, b) =>
         new Date(b.fixture!.date).getTime() -

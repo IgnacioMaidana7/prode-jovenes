@@ -7,6 +7,28 @@ const supabase = createClient(
 
 const API_URL = 'https://worldcup26.ir/get/games'
 
+// UTC offsets por stadium_id (horario de verano / DST del torneo)
+// México abolió el DST en 2023, siempre UTC-6
+// US/Canadá en verano: Eastern=UTC-4, Central=UTC-5, Pacific=UTC-7
+const STADIUM_UTC_OFFSETS: Record<number, number> = {
+  1:  -6, // Mexico City (Estadio Azteca)
+  2:  -6, // Guadalajara (Estadio Akron)
+  3:  -6, // Monterrey (Estadio BBVA)
+  4:  -5, // Dallas (AT&T Stadium)
+  5:  -5, // Houston (NRG Stadium)
+  6:  -5, // Kansas City (Arrowhead)
+  7:  -4, // Atlanta (Mercedes-Benz)
+  8:  -4, // Miami (Hard Rock)
+  9:  -4, // Boston (Gillette)
+  10: -4, // Philadelphia (Lincoln Financial)
+  11: -4, // New York/NJ (MetLife)
+  12: -4, // Toronto (BMO Field)
+  13: -7, // Vancouver (BC Place)
+  14: -7, // Seattle (Lumen Field)
+  15: -7, // San Francisco (Levi's)
+  16: -7, // Los Angeles (SoFi)
+}
+
 // API type → internal stage
 const STAGE_MAP: Record<string, string> = {
   group: 'GROUP',
@@ -68,17 +90,21 @@ const TEAM_NAMES_ES: Record<string, string> = {
   Greece: 'Grecia', Ireland: 'Irlanda', Nigeria: 'Nigeria', Kenya: 'Kenia',
 }
 
-// "MM/DD/YYYY HH:MM" (UTC-6) → ISO UTC string
-function parseDate(localDate: string): string {
+// "MM/DD/YYYY HH:MM" (hora local del estadio) → ISO UTC string
+function parseDate(localDate: string, stadiumId: number | string): string {
+  const offset = STADIUM_UTC_OFFSETS[Number(stadiumId)] ?? -5
   const [datePart, timePart] = localDate.split(' ')
   const [month, day, year] = datePart.split('/')
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${timePart}:00-06:00`
+  const sign = offset < 0 ? '-' : '+'
+  const absOffset = Math.abs(offset)
+  const offsetStr = `${sign}${String(absOffset).padStart(2, '0')}:00`
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${timePart}:00${offsetStr}`
 }
 
 function deriveStatus(game: any): string {
   if (game.finished === 'TRUE') return 'FINISHED'
   try {
-    const gameDate = new Date(parseDate(game.local_date))
+    const gameDate = new Date(parseDate(game.local_date, game.stadium_id))
     if (gameDate <= new Date()) return 'IN_PLAY'
   } catch { /* ignore parse errors */ }
   return 'SCHEDULED'
@@ -141,6 +167,8 @@ Deno.serve(async () => {
           existing = byTeams.get(`${teamHomeES}|${teamAwayES}`)
         }
 
+        const isoDate = parseDate(game.local_date, game.stadium_id)
+
         const payload = {
           result_home: resultHome,
           result_away: resultAway,
@@ -149,6 +177,7 @@ Deno.serve(async () => {
           team_away: teamAwayES,
           flag_home: flagHome,
           flag_away: flagAway,
+          date: isoDate, // siempre actualizar con la timezone correcta del estadio
         }
 
         let fixtureId: string
@@ -168,7 +197,7 @@ Deno.serve(async () => {
               external_id: externalId,
               stage,
               group_name: groupName,
-              date: parseDate(game.local_date),
+              date: isoDate,
               ...payload,
             })
             .select('id')
