@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Crown } from "lucide-react";
@@ -5,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LeaderboardRow } from "@/components/prode/LeaderboardRow";
+import { PlayerPredictionsDialog } from "@/components/prode/PlayerPredictionsDialog";
 import { fadeUp, staggerContainer } from "@/lib/motion";
 import { formatPoints } from "@/lib/format";
 import { usePlayer } from "@/stores/auth.store";
@@ -12,12 +14,14 @@ import {
   useCurrentUserStats,
   useGlobalLeaderboard,
 } from "@/hooks/useLeaderboard";
+import type { LeaderboardEntry } from "@/types";
 
 export function LeaderboardView() {
   const player = usePlayer();
   const navigate = useNavigate();
   const { data, isLoading, isError, refetch } = useGlobalLeaderboard();
   const stats = useCurrentUserStats();
+  const [selectedEntry, setSelectedEntry] = useState<LeaderboardEntry | null>(null);
 
   const entries = data ?? [];
   const leader = entries[0];
@@ -119,6 +123,7 @@ export function LeaderboardView() {
               key={entry.player_id}
               entry={entry}
               isCurrentUser={entry.player_id === player?.id}
+              onClick={() => setSelectedEntry(entry)}
             />
           ))}
         </motion.div>
@@ -133,6 +138,12 @@ export function LeaderboardView() {
           </span>
         </motion.div>
       )}
+
+      <PlayerPredictionsDialog
+        entry={selectedEntry}
+        open={selectedEntry !== null}
+        onOpenChange={(open) => { if (!open) setSelectedEntry(null); }}
+      />
     </motion.div>
   );
 }

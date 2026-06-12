@@ -8,9 +8,10 @@ import type { LeaderboardEntry } from "@/types";
 type Props = {
   entry: LeaderboardEntry;
   isCurrentUser?: boolean;
+  onClick?: () => void;
 };
 
-export function LeaderboardRow({ entry, isCurrentUser = false }: Props) {
+export function LeaderboardRow({ entry, isCurrentUser = false, onClick }: Props) {
   const isTop3 = entry.rank <= 3;
   const displayName = entry.username ?? "Hincha";
   const initials = displayName
@@ -23,11 +24,12 @@ export function LeaderboardRow({ entry, isCurrentUser = false }: Props) {
   return (
     <motion.div
       variants={fadeUp}
+      onClick={onClick}
       className={cn(
         "group/row relative flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 transition-colors hover:border-border/40 hover:bg-muted/20",
         isTop3 && "border-accent/30 bg-gradient-to-r from-accent/5 to-transparent",
-        isCurrentUser &&
-          "border-primary/40 bg-primary/5 ring-1 ring-primary/20"
+        isCurrentUser && "border-primary/40 bg-primary/5 ring-1 ring-primary/20",
+        onClick && "cursor-pointer"
       )}
     >
       <span

@@ -4,6 +4,24 @@ import { supabase } from "@/lib/supabase";
 import { usePlayer } from "@/stores/auth.store";
 import type { GroupLeaderboardEntry, LeaderboardEntry } from "@/types";
 
+export type PredictionWithFixture = {
+  id: string;
+  fixture_id: string;
+  pred_home: number;
+  pred_away: number;
+  points: number | null;
+  fixture: {
+    team_home: string | null;
+    team_away: string | null;
+    flag_home: string | null;
+    flag_away: string | null;
+    result_home: number | null;
+    result_away: number | null;
+    status: string;
+    date: string;
+  } | null;
+};
+
 const GLOBAL_KEY = ["leaderboard", "global"] as const;
 const GROUP_KEY = (groupId: string) =>
   ["leaderboard", "group", groupId] as const;
@@ -64,6 +82,40 @@ export function useGroupLeaderboard(groupId: string | undefined) {
     staleTime: 30_000,
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
+  });
+}
+
+async function fetchPlayerRecentPredictions(
+  playerId: string
+): Promise<PredictionWithFixture[]> {
+  const { data, error } = await supabase
+    .from("predictions")
+    .select(
+      `id, fixture_id, pred_home, pred_away, points,
+       fixture:fixtures(team_home, team_away, flag_home, flag_away, result_home, result_away, status, date)`
+    )
+    .eq("player_id", playerId);
+  if (error) throw error;
+
+  return ((data ?? []) as PredictionWithFixture[])
+    .filter(
+      (p) =>
+        p.fixture?.status === "FINISHED" && p.fixture.result_home !== null
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.fixture!.date).getTime() -
+        new Date(a.fixture!.date).getTime()
+    )
+    .slice(0, 5);
+}
+
+export function usePlayerRecentPredictions(playerId: string | undefined) {
+  return useQuery({
+    queryKey: ["player-recent-predictions", playerId ?? "none"],
+    queryFn: () => fetchPlayerRecentPredictions(playerId!),
+    enabled: !!playerId,
+    staleTime: 30_000,
   });
 }
 
