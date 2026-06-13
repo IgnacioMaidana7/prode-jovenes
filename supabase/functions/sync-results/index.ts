@@ -229,6 +229,14 @@ Deno.serve(async () => {
             await supabase.from('predictions').update({ points: pts }).eq('id', pred.id)
             pointsUpdated++
           }
+        } else if (!isFinished && existing?.status === 'FINISHED') {
+          // Partido que estaba FINISHED volvió a un estado previo (corrección de la API):
+          // limpiar los puntos para que no contaminen el ranking
+          await supabase
+            .from('predictions')
+            .update({ points: null })
+            .eq('fixture_id', fixtureId)
+          pointsUpdated++
         }
       } catch (gameErr) {
         console.error('Error procesando partido', game?.id, gameErr)
