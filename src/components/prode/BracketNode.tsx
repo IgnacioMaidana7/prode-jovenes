@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Flag } from "@/lib/flags";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScoreInput } from "@/components/prode/ScoreInput";
 import { cardHover, fadeUp } from "@/lib/motion";
@@ -43,26 +44,28 @@ export function BracketNode({ match }: Props) {
         {isFinal && (
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-accent/8" />
         )}
-        <CardContent className="relative flex flex-col gap-2.5">
-          <div className="flex items-center justify-between">
-            <span className="font-mono-label text-[0.6rem] uppercase tracking-wider text-muted-foreground">
+        <CardContent className="relative flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono-label text-[0.65rem] uppercase tracking-wider text-muted-foreground">
               {roundLabel[match.stage]}
             </span>
             {isPending && (
-              <span className="font-mono-label text-[0.6rem] uppercase tracking-wider text-accent">
-                A definir
-              </span>
+              <Badge variant="outline" className="text-[0.6rem]">
+                A DEFINIR
+              </Badge>
             )}
           </div>
 
-          <div className="flex flex-col gap-2">
-            <TeamRow code={match.flag_home} name={match.team_home} />
-            <div className="h-px w-full bg-border/40" />
-            <TeamRow code={match.flag_away} name={match.team_away} />
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <TeamSide code={match.flag_home} name={match.team_home} side="left" />
+            <span className="font-display text-xs text-muted-foreground">
+              VS
+            </span>
+            <TeamSide code={match.flag_away} name={match.team_away} side="right" />
           </div>
 
           {!isPending && !isFinal && (
-            <div className="flex items-center justify-center border-t border-border/40 pt-2.5">
+            <div className="flex items-center justify-center border-t border-border/40 pt-3">
               <ScoreInput fixture={match} />
             </div>
           )}
@@ -72,28 +75,45 @@ export function BracketNode({ match }: Props) {
   );
 }
 
-function TeamRow({
+function TeamSide({
   code,
   name,
+  side,
 }: {
   code: string | null;
   name: string | null;
+  side: "left" | "right";
 }) {
   if (!code || !name) {
     return (
-      <div className="flex items-center gap-2.5">
-        <span className="inline-block size-7 rounded-sm border border-dashed border-border bg-muted/30" />
-        <div className="flex-1 font-mono-label text-[0.7rem] uppercase tracking-wider text-muted-foreground">
+      <div
+        className={cn(
+          "flex min-w-0 items-center gap-2",
+          side === "right" && "flex-row-reverse text-right"
+        )}
+      >
+        <span className="inline-block size-8 shrink-0 rounded-sm border border-dashed border-border bg-muted/30" />
+        <div className="font-mono-label text-[0.6rem] uppercase tracking-wider text-muted-foreground">
           Ganador
         </div>
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-2.5">
-      <Flag code={code} width={28} />
-      <div className="flex-1 truncate text-sm font-semibold text-foreground">
-        {name}
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-2",
+        side === "right" && "flex-row-reverse text-right"
+      )}
+    >
+      <Flag code={code} width={32} />
+      <div className="min-w-0 flex-1">
+        <div className="font-mono-label text-[0.6rem] uppercase tracking-wider text-muted-foreground">
+          {code}
+        </div>
+        <div className="truncate text-sm font-semibold text-foreground">
+          {name}
+        </div>
       </div>
     </div>
   );
