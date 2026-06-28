@@ -116,7 +116,7 @@ export function useSavePrediction() {
       return data as Prediction;
     },
 
-    onMutate: async ({ fixtureId, homeScore, awayScore }) => {
+    onMutate: async ({ fixtureId, homeScore, awayScore, tiebreakWinner }) => {
       if (!player) return;
       const key = PREDICTIONS_KEY(player.id);
       await qc.cancelQueries({ queryKey: key });
