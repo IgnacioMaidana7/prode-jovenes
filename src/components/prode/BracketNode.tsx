@@ -64,7 +64,7 @@ export function BracketNode({ match }: Props) {
             <TeamSide code={match.flag_away} name={match.team_away} side="right" />
           </div>
 
-          {!isPending && !isFinal && (
+          {!isPending && (
             <div className="flex items-center justify-center border-t border-border/40 pt-3">
               <ScoreInput fixture={match} />
             </div>

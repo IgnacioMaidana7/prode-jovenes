@@ -63,6 +63,7 @@ type SavePredictionInput = {
   fixtureId: string;
   homeScore: number;
   awayScore: number;
+  tiebreakWinner?: string | null;
 };
 
 function fixtureHasStarted(fixture: Fixture | undefined): boolean {
@@ -78,7 +79,7 @@ export function useSavePrediction() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ fixtureId, homeScore, awayScore }: SavePredictionInput) => {
+    mutationFn: async ({ fixtureId, homeScore, awayScore, tiebreakWinner }: SavePredictionInput) => {
       if (!player) throw new Error("Necesitás entrar al prode primero.");
 
       const fixtures =
@@ -93,6 +94,8 @@ export function useSavePrediction() {
 
       const safeHome = Math.max(0, Math.min(99, Math.floor(homeScore)));
       const safeAway = Math.max(0, Math.min(99, Math.floor(awayScore)));
+      const isKnockout = fixture.stage !== "GROUP";
+      const isDraw = safeHome === safeAway;
 
       const { data, error } = await supabase
         .from("predictions")
@@ -102,6 +105,7 @@ export function useSavePrediction() {
             fixture_id: fixtureId,
             pred_home: safeHome,
             pred_away: safeAway,
+            tiebreak_winner: isKnockout && isDraw ? (tiebreakWinner ?? null) : null,
           },
           { onConflict: "player_id,fixture_id" }
         )
@@ -126,6 +130,7 @@ export function useSavePrediction() {
         fixture_id: fixtureId,
         pred_home: homeScore,
         pred_away: awayScore,
+        tiebreak_winner: tiebreakWinner ?? null,
         points: null,
         created_at: new Date().toISOString(),
       };

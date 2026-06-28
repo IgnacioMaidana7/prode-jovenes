@@ -112,8 +112,20 @@ function deriveStatus(game: any): string {
   return 'SCHEDULED'
 }
 
-function calcPoints(ph: number, pa: number, rh: number, ra: number): number {
-  if (ph === rh && pa === ra) return 10
+function calcPoints(
+  ph: number, pa: number,
+  rh: number, ra: number,
+  isKnockout: boolean,
+  tiebreakWinner: string | null,
+  winnerCode: string | null,
+): number {
+  if (ph === rh && pa === ra) {
+    // Exact draw in knockout: full 10 pts only with correct tiebreak
+    if (isKnockout && rh === ra) {
+      return (winnerCode && tiebreakWinner && tiebreakWinner === winnerCode) ? 10 : 5
+    }
+    return 10
+  }
   if (Math.sign(ph - pa) === Math.sign(rh - ra)) return 5
   return 0
 }
@@ -171,9 +183,26 @@ Deno.serve(async () => {
 
         const isoDate = parseDate(game.local_date, game.stadium_id)
 
+        // Determine winner code for knockout draws (via penalty scores if available)
+        let winnerCode: string | null = null
+        if (isFinished && resultHome !== null && resultAway !== null) {
+          if (resultHome > resultAway) winnerCode = flagHome
+          else if (resultAway > resultHome) winnerCode = flagAway
+          else {
+            // Draw — try penalty scores from API
+            const ph = game.home_penalty != null ? parseInt(game.home_penalty, 10) : null
+            const pa = game.away_penalty != null ? parseInt(game.away_penalty, 10) : null
+            if (ph !== null && pa !== null && !isNaN(ph) && !isNaN(pa)) {
+              if (ph > pa) winnerCode = flagHome
+              else if (pa > ph) winnerCode = flagAway
+            }
+          }
+        }
+
         const payload = {
           result_home: resultHome,
           result_away: resultAway,
+          winner_code: isFinished ? winnerCode : null,
           status,
           stage,
           group_name: groupName,
@@ -219,13 +248,20 @@ Deno.serve(async () => {
           existing.result_away !== resultAway
 
         if (isFinished && resultHome !== null && resultAway !== null && resultsChanged) {
+          const isKnockoutStage = stage !== 'GROUP'
           const { data: preds } = await supabase
             .from('predictions')
-            .select('id, pred_home, pred_away')
+            .select('id, pred_home, pred_away, tiebreak_winner')
             .eq('fixture_id', fixtureId)
 
           for (const pred of preds ?? []) {
-            const pts = calcPoints(pred.pred_home, pred.pred_away, resultHome, resultAway)
+            const pts = calcPoints(
+              pred.pred_home, pred.pred_away,
+              resultHome, resultAway,
+              isKnockoutStage,
+              pred.tiebreak_winner ?? null,
+              winnerCode,
+            )
             await supabase.from('predictions').update({ points: pts }).eq('id', pred.id)
             pointsUpdated++
           }

@@ -16,6 +16,7 @@ import { LeaderboardView } from "@/views/LeaderboardView";
 import { PerfilView } from "@/views/PerfilView";
 import { useIsAuthenticated, useAuthStore } from "@/stores/auth.store";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
+import { UpdateNoticeModal } from "@/components/prode/UpdateNoticeModal";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,6 +72,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <RealtimeBridge />
+      <UpdateNoticeModal />
       <RouterProvider router={router} />
     </QueryClientProvider>
   );

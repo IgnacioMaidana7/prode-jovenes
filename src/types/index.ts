@@ -36,6 +36,7 @@ export type Fixture = {
   date: string;
   result_home: number | null;
   result_away: number | null;
+  winner_code: string | null;
   status: FixtureStatus;
 };
 
@@ -45,6 +46,7 @@ export type Prediction = {
   fixture_id: string;
   pred_home: number;
   pred_away: number;
+  tiebreak_winner: string | null;
   points: number | null;
   created_at: string;
 };
@@ -54,6 +56,7 @@ export type PredictionInsert = {
   fixture_id: string;
   pred_home: number;
   pred_away: number;
+  tiebreak_winner?: string | null;
 };
 
 export type Profile = {
